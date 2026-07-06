@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import AuthModal from './AuthModal';
 import CartSidebar from './CartSidebar';
+import Logo from './Logo';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
@@ -44,9 +45,7 @@ const Header: React.FC = () => {
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3 group">
-              <div className="w-12 h-12 bg-gradient-to-br from-rose-500 to-pink-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <Crown className="w-7 h-7 text-white" />
-              </div>
+              <Logo className="w-12 h-12 drop-shadow-md group-hover:scale-110 transition-transform duration-300" />
               <div>
                 <span className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
                   PremiumBD
