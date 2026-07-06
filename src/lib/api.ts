@@ -1,4 +1,5 @@
-const API_BASE_URL = 'http://localhost:5005/api';
+// Set VITE_API_URL at build time when the API is hosted elsewhere (e.g. Render).
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5005'}/api`;
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {
