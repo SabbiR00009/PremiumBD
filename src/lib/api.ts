@@ -1,5 +1,7 @@
-// Set VITE_API_URL at build time when the API is hosted elsewhere (e.g. Render).
-const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5005'}/api`;
+// Relative /api by default: works when the Express server serves the built
+// frontend (single-service deploy) and in dev via the Vite proxy.
+// Set VITE_API_URL at build time only if the API is hosted on another domain.
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || ''}/api`;
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {

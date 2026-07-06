@@ -3,7 +3,12 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import 'dotenv/config';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const PORT = process.env.PORT || 5005;
@@ -354,6 +359,17 @@ app.put('/api/admin/users/:id/role', verifyToken, requireAdmin, async (req, res)
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
 });
+
+// Serve the built frontend (dist/) when it exists, so the whole app can run
+// as a single service (e.g. one Render web service). API routes stay under /api.
+const distDir = path.join(__dirname, 'dist');
+if (fs.existsSync(distDir)) {
+  app.use(express.static(distDir));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) return next();
+    res.sendFile(path.join(distDir, 'index.html'));
+  });
+}
 
 // Global error handler
 app.use((err, req, res, next) => {
