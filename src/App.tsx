@@ -1,48 +1,91 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { CartProvider } from './context/CartContext';
-import Navbar from './components/Navbar';
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { CartProvider } from './contexts/CartContext';
+import { AdminProvider } from './contexts/AdminContext';
+import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/Home';
-import Products from './pages/Products';
+import Category from './pages/Category';
 import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Orders from './pages/Orders';
-import Admin from './pages/Admin';
+import Profile from './pages/Profile';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import ProductManagement from './pages/admin/ProductManagement';
+import OrderManagement from './pages/admin/OrderManagement';
+import UserManagement from './pages/admin/UserManagement';
+import ProtectedRoute from './components/ProtectedRoute';
 
-export default function App() {
+function App() {
   return (
     <AuthProvider>
       <CartProvider>
-        <BrowserRouter>
-          <div className="flex min-h-screen flex-col">
-            <Navbar />
+        <AdminProvider>
+          <div className="min-h-screen bg-gray-50">
+            <Header />
             <main className="flex-1">
               <Routes>
                 <Route path="/" element={<Home />} />
-                <Route path="/products" element={<Products />} />
-                <Route path="/products/:id" element={<ProductDetail />} />
+                <Route path="/category/:categoryName" element={<Category />} />
+                <Route path="/product/:productId" element={<ProductDetail />} />
                 <Route path="/cart" element={<Cart />} />
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/orders" element={<Orders />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route
-                  path="*"
+                <Route 
+                  path="/checkout" 
                   element={
-                    <div className="py-24 text-center text-stone-400">Page not found.</div>
-                  }
+                    <ProtectedRoute>
+                      <Checkout />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/profile" 
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin" 
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/products" 
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <ProductManagement />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/orders" 
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <OrderManagement />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/users" 
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <UserManagement />
+                    </ProtectedRoute>
+                  } 
                 />
               </Routes>
             </main>
             <Footer />
           </div>
-        </BrowserRouter>
+        </AdminProvider>
       </CartProvider>
     </AuthProvider>
   );
 }
+
+export default App;

@@ -224,6 +224,132 @@ app.get('/api/admin/users', verifyToken, requireAdmin, async (req, res) => {
   }
 });
 
+// ---- Routes required by the frontend api client ----
+
+// Update own profile
+app.put('/api/auth/profile', verifyToken, async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    if (name) req.user.name = name;
+    if (email && email !== req.user.email) {
+      const taken = await User.findOne({ email, _id: { $ne: req.user._id } });
+      if (taken) {
+        return res.status(400).json({ message: 'That email is already in use' });
+      }
+      req.user.email = email;
+    }
+    await req.user.save();
+    res.json({
+      _id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      role: req.user.role,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Search products by keyword
+app.get('/api/products/search/:query', async (req, res) => {
+  try {
+    const re = new RegExp(req.params.query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const products = await Product.find({
+      $or: [{ name: re }, { brand: re }, { description: re }, { category: re }],
+    }).sort({ createdAt: -1 });
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Admin: update a product
+app.put('/api/products/:id', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    res.json(product);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Admin: delete a product
+app.delete('/api/products/:id', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    res.json({ message: 'Product deleted' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Admin: list all orders
+app.get('/api/orders', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .sort({ createdAt: -1 })
+      .populate('user', 'name email');
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Admin: update order status
+app.put('/api/orders/:id/status', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const allowed = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    ).populate('user', 'name email');
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Admin: change a user's role
+app.put('/api/admin/users/:id/role', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (!['customer', 'admin'].includes(role)) {
+      return res.status(400).json({ message: 'Invalid role' });
+    }
+    if (req.params.id === req.user._id.toString() && role !== 'admin') {
+      return res.status(400).json({ message: 'You cannot remove your own admin role' });
+    }
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { role },
+      { new: true }
+    ).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });

@@ -1,39 +1,118 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { Star } from 'lucide-react';
-import { Product, taka } from '../lib/api';
+import { Star, ShoppingCart, Heart, Sparkles } from 'lucide-react';
+import { useCart } from '../contexts/CartContext';
 
-export default function ProductCard({ product }: { product: Product }) {
-  const out = product.stock <= 0;
-  return (
-    <Link to={`/products/${product._id}`} className="card group block overflow-hidden transition hover:shadow-md">
-      <div className="relative aspect-square overflow-hidden bg-stone-100">
-        <img
-          src={product.image}
-          alt={product.name}
-          loading="lazy"
-          className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-        />
-        <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-semibold text-bangladesh-800">
-          {product.origin}
-        </span>
-        {out && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/70">
-            <span className="rounded-full bg-stone-800 px-3 py-1 text-xs font-semibold text-white">Out of stock</span>
-          </div>
-        )}
-      </div>
-      <div className="p-3">
-        <p className="text-xs uppercase tracking-wide text-stone-400">{product.brand} · {product.category}</p>
-        <h3 className="mt-0.5 truncate text-sm font-medium text-stone-800 group-hover:text-bangladesh-700">
-          {product.name}
-        </h3>
-        <div className="mt-1 flex items-center gap-1 text-xs text-stone-400">
-          <Star size={13} className="fill-gold-400 text-gold-400" />
-          {product.rating > 0 ? product.rating.toFixed(1) : 'New'}
-          {product.reviews > 0 && <span>({product.reviews})</span>}
-        </div>
-        <p className="mt-1.5 text-base font-bold text-bangladesh-900">{taka(product.price)}</p>
-      </div>
-    </Link>
-  );
+interface Product {
+  _id: string;
+  name: string;
+  price: number;
+  image: string;
+  category: string;
+  brand: string;
+  origin: string;
+  rating?: number;
+  reviews?: number;
 }
+
+interface ProductCardProps {
+  product: Product;
+}
+
+const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+  const { addToCart } = useCart();
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    addToCart({
+      _id: product._id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+    });
+  };
+
+  const getCategoryGradient = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'beauty':
+      case 'cosmetics':
+        return 'from-pink-500 to-rose-500';
+      case 'fashion':
+        return 'from-purple-500 to-pink-500';
+      case 'skincare':
+        return 'from-emerald-500 to-teal-500';
+      case 'fragrances':
+        return 'from-violet-500 to-purple-500';
+      default:
+        return 'from-rose-500 to-pink-500';
+    }
+  };
+
+  return (
+    <div className="group bg-white rounded-3xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100">
+      <Link to={`/product/${product._id}`}>
+        <div className="relative overflow-hidden">
+          <img
+            src={product.image}
+            alt={product.name}
+            className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          
+          {/* Origin badge */}
+          <div className={`absolute top-4 left-4 bg-gradient-to-r ${getCategoryGradient(product.category)} text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1`}>
+            <Sparkles className="w-3 h-3" />
+            <span>{product.origin}</span>
+          </div>
+          
+          {/* Wishlist button */}
+          <button className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-300 group/heart">
+            <Heart className="w-4 h-4 text-gray-600 group-hover/heart:text-rose-500 transition-colors" />
+          </button>
+        </div>
+      </Link>
+      
+      <div className="p-6">
+        <Link to={`/product/${product._id}`}>
+          <div className="mb-4">
+            <p className="text-sm font-medium text-gray-500 mb-2">{product.brand}</p>
+            <h3 className="text-lg font-bold text-gray-900 line-clamp-2 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-rose-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all duration-300">
+              {product.name}
+            </h3>
+          </div>
+        </Link>
+        
+        <div className="flex items-center mb-4">
+          <div className="flex items-center">
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                className={`w-4 h-4 ${
+                  i < (product.rating || 0) ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                }`}
+              />
+            ))}
+          </div>
+          <span className="text-sm text-gray-500 ml-2">({product.reviews || 0})</span>
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col">
+            <span className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+              ৳{product.price.toLocaleString()}
+            </span>
+            <span className="text-xs text-gray-500">Free shipping</span>
+          </div>
+          <button
+            onClick={handleAddToCart}
+            className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white p-3 rounded-2xl transition-all duration-300 transform hover:scale-110 shadow-lg hover:shadow-xl group/cart"
+          >
+            <ShoppingCart className="w-5 h-5 group-hover/cart:scale-110 transition-transform" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProductCard;
